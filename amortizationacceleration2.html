@@ -1,10 +1,11 @@
+Amortization Acceleration Code
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Amortization Acceleration Calculator</title>
-
   <style>
     *{box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f6fb;padding:16px}
@@ -21,152 +22,446 @@
     input:focus,select:focus{outline:none;border-color:#4facfe}
     .muted{color:#475569;font-size:.82rem;line-height:1.35;margin-top:8px}
     .btn{width:100%;margin-top:12px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-weight:800;font-size:1.05rem;cursor:pointer}
+    .btn:active{transform:scale(.99)}
     .results{display:none;margin-top:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:14px}
     .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
     .card{padding:12px;border-radius:12px;color:#fff}
+    .card .lbl{opacity:.92;font-size:.82rem}
+    .card .val{font-size:1.15rem;font-weight:900;margin-top:4px}
     .green{background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%)}
     .blue{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
     .table{width:100%;border-collapse:collapse;margin-top:10px}
     .table th,.table td{border:1px solid #e5e7eb;padding:8px;text-align:center;font-size:.85rem}
     .table th{background:#eef2ff;font-weight:800}
+    .warn{margin-top:10px;font-size:.85rem;font-weight:800}
+    .pos{color:#16a34a}
+    .neg{color:#dc2626}
+    @media (max-width:480px){.row{grid-template-columns:1fr}}
   </style>
 </head>
-
 <body>
-<div class="container">
+  <div class="container">
+    <div class="header">
+      <h1>Amortization Acceleration Calculator</h1>
+      <p>Velocity Banking + HELOC Chunk Cycling (next chunk only after HELOC is paid back down)</p>
+    </div>
 
-  <div class="header">
-    <h1>Amortization Acceleration Calculator</h1>
-    <p>Velocity Banking using a Revolving Resource</p>
+    <div class="content">
+      <div class="group" style="background:#f1f5f9">
+        <h2>💰 Income Deposits (Applied on Their Actual Frequency)</h2>
+
+        <div class="row">
+          <div>
+            <label for="income1">Income #1 Amount</label>
+            <input type="number" id="income1" placeholder="1500" inputmode="decimal">
+          </div>
+          <div>
+            <label for="freq1">Income #1 Frequency</label>
+            <select id="freq1">
+              <option value="weekly" selected>Weekly</option>
+              <option value="biweekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="income2">Income #2 Amount</label>
+            <input type="number" id="income2" placeholder="2500" inputmode="decimal">
+          </div>
+          <div>
+            <label for="freq2">Income #2 Frequency</label>
+            <select id="freq2">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly" selected>Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="income3">Income #3 Amount</label>
+            <input type="number" id="income3" placeholder="3500" inputmode="decimal">
+          </div>
+          <div>
+            <label for="freq3">Income #3 Frequency</label>
+            <select id="freq3">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Bi-weekly</option>
+              <option value="monthly" selected>Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="muted">
+          Deposits hit the HELOC like a checking account: weekly = every 7 days, bi-weekly = every 14 days, monthly = every 30 days.
+        </div>
+      </div>
+
+      <div class="group" style="background:#fff5f5">
+        <h2>📊 Monthly Expenses</h2>
+        <label for="monthlyExpenses">Total Monthly Expenses</label>
+        <input type="number" id="monthlyExpenses" placeholder="5200" inputmode="decimal">
+        <div class="muted">
+          Expenses withdraw once per month on day 30 (after deposits that day). Do <b>not</b> include your mortgage payment here.
+        </div>
+      </div>
+
+      <div class="group" style="background:#f0f8ff">
+        <h2>🏠 Mortgage</h2>
+        <div class="row">
+          <div>
+            <label for="mortBalance">Mortgage Balance</label>
+            <input type="number" id="mortBalance" placeholder="380000" inputmode="decimal">
+          </div>
+          <div>
+            <label for="mortRate">Mortgage Rate (%)</label>
+            <input type="number" step="0.01" id="mortRate" placeholder="6.8" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="mortYears">Years Remaining (for standard comparison)</label>
+            <input type="number" id="mortYears" placeholder="26" inputmode="decimal">
+          </div>
+          <div>
+            <label for="mortPayDay">Mortgage Payment Day</label>
+            <select id="mortPayDay">
+              <option value="1" selected>Day 1</option>
+              <option value="15">Day 15</option>
+              <option value="30">Day 30</option>
+            </select>
+          </div>
+        </div>
+        <div class="muted">Mortgage interest accrues monthly (30-day months). Standard mortgage payment is applied monthly on the selected day.</div>
+      </div>
+
+      <div class="group" style="background:#f5f0ff">
+        <h2>💳 HELOC (Interest-Only)</h2>
+        <div class="row">
+          <div>
+            <label for="helocLimit">HELOC Limit</label>
+            <input type="number" id="helocLimit" placeholder="160000" inputmode="decimal">
+          </div>
+          <div>
+            <label for="helocRate">HELOC Rate (%)</label>
+            <input type="number" step="0.01" id="helocRate" placeholder="7.9" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="chunkPct">Chunk Size (% of Available Credit)</label>
+            <input type="number" id="chunkPct" value="50" min="1" max="100" inputmode="decimal">
+          </div>
+          <div>
+            <label for="chunkMin">Minimum Chunk ($)</label>
+            <input type="number" id="chunkMin" value="1000" inputmode="decimal">
+          </div>
+        </div>
+        <div class="muted">
+          HELOC interest accrues <b>daily</b> and is capitalized onto the HELOC balance. Chunk cycling rule:
+          <b>Only take a new chunk after the HELOC is paid back down to $0 (or very close to $0).</b>
+        </div>
+      </div>
+
+      <button class="btn" id="calcBtn">Calculate 🚀</button>
+
+      <div class="results" id="results">
+        <div class="kpi">
+          <div class="card green">
+            <div class="lbl">Time Saved vs Standard</div>
+            <div class="val"><span id="timeSaved">0.0</span> years</div>
+          </div>
+          <div class="card blue">
+            <div class="lbl">Interest Savings vs Standard</div>
+            <div class="val">$<span id="interestSaved">0</span></div>
+          </div>
+        </div>
+
+        <table class="table">
+          <tr>
+            <th></th>
+            <th>Standard Mortgage</th>
+            <th>Velocity + HELOC Cycle</th>
+          </tr>
+          <tr>
+            <td>Payoff Time</td>
+            <td><span id="stdYearsOut">0.0</span> yrs</td>
+            <td><span id="velYearsOut">0.0</span> yrs</td>
+          </tr>
+          <tr>
+            <td>Mortgage Payment</td>
+            <td>$<span id="stdPmtOut">0</span>/mo</td>
+            <td>$<span id="stdPmtOut2">0</span>/mo</td>
+          </tr>
+          <tr>
+            <td>Total Interest</td>
+            <td>$<span id="stdIntOut">0</span></td>
+            <td>$<span id="velIntOut">0</span></td>
+          </tr>
+        </table>
+
+        <div class="muted" style="margin-top:10px">
+          Chunk cycle behavior:
+          <ul style="margin:8px 0 0 18px;padding:0">
+            <li>When HELOC balance is ~0 and mortgage still exists, the calculator takes a chunk (percent of available credit).</li>
+            <li>No additional chunks occur until HELOC is paid back down to ~0 again by deposits (after expenses & mortgage payment).</li>
+          </ul>
+        </div>
+
+        <div class="warn" id="warn"></div>
+      </div>
+    </div>
   </div>
-
-  <div class="content">
-
-    <div class="group" style="background:#f1f5f9">
-      <h2>💰 Income Deposits</h2>
-
-      <div class="row">
-        <div>
-          <label>Income #1</label>
-          <input type="number" id="income1">
-        </div>
-        <div>
-          <label>Frequency</label>
-          <select id="freq1">
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Bi-Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Income #2</label>
-          <input type="number" id="income2">
-        </div>
-        <div>
-          <label>Frequency</label>
-          <select id="freq2">
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Bi-Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Income #3</label>
-          <input type="number" id="income3">
-        </div>
-        <div>
-          <label>Frequency</label>
-          <select id="freq3">
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Bi-Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="group" style="background:#fff5f5">
-      <h2>📊 Monthly Expenses</h2>
-      <label>Total Monthly Expenses</label>
-      <input type="number" id="monthlyExpenses">
-    </div>
-
-    <div class="group" style="background:#f0f8ff">
-      <h2>🏠 Mortgage</h2>
-      <label>Mortgage Balance</label>
-      <input type="number" id="mortBalance">
-
-      <label>Interest Rate (%)</label>
-      <input type="number" id="mortRate">
-
-      <label>Years Remaining</label>
-      <input type="number" id="mortYears">
-    </div>
-
-    <div class="group" style="background:#f5f0ff">
-      <h2>🔄 Revolving Resource</h2>
-
-      <label>Resource Limit</label>
-      <input type="number" id="helocLimit">
-
-      <label>Resource Interest Rate (%)</label>
-      <input type="number" id="helocRate">
-
-      <label>Chunk Size (% of Available Resource)</label>
-      <input type="number" id="chunkPct" value="50">
-
-      <label>Minimum Chunk</label>
-      <input type="number" id="chunkMin" value="1000">
-
-      <div class="muted">
-        The Revolving Resource acts like a financial recycling tool:
-        deposits reduce balance, expenses and payments draw from it.
-      </div>
-    </div>
-
-    <button class="btn" id="calcBtn">Calculate</button>
-
-    <div class="results" id="results">
-      <div class="kpi">
-        <div class="card green">
-          <div>Time Saved</div>
-          <strong><span id="timeSaved">0</span> years</strong>
-        </div>
-        <div class="card blue">
-          <div>Interest Saved</div>
-          <strong>$<span id="interestSaved">0</span></strong>
-        </div>
-      </div>
-
-      <table class="table">
-        <tr>
-          <th></th>
-          <th>Standard</th>
-          <th>Accelerated</th>
-        </tr>
-        <tr>
-          <td>Payoff Time</td>
-          <td><span id="stdYearsOut">0</span> yrs</td>
-          <td><span id="velYearsOut">0</span> yrs</td>
-        </tr>
-      </table>
-    </div>
-
-  </div>
-</div>
 
 <script>
-/* JS LOGIC IS 100% UNCHANGED */
-document.getElementById("calcBtn").onclick = function(){
-  document.getElementById("results").style.display = "block";
-};
-</script>
+(function(){
+  const DAYS_PER_MONTH = 30;
+  const DAYS_PER_YEAR  = 365;
+  const MAX_DAYS       = 365 * 80;
+  const ZERO_EPS       = 1.00; // treat HELOC <= $1 as "paid off"
 
+  function n(x){ const v = parseFloat(x); return isFinite(v) ? v : 0; }
+  function fmt0(x){ return Math.round(x).toLocaleString(); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+  function stdMortgagePayment(P, annualRatePct, years){
+    const r = (annualRatePct/100)/12;
+    const m = Math.max(1, Math.round(years*12));
+    if (r <= 0) return P / m;
+    return P * (r * Math.pow(1+r, m)) / (Math.pow(1+r, m) - 1);
+  }
+
+  function runStandardMortgage(P0, annualRatePct, years){
+    const r = (annualRatePct/100)/12;
+    const pmt = stdMortgagePayment(P0, annualRatePct, years);
+    let bal = P0, months = 0, interest = 0;
+    const maxMonths = Math.min(12*80, Math.round(years*12) + 12*10);
+
+    while (bal > 0.01 && months < maxMonths){
+      const i = bal * r;
+      interest += i;
+      let principal = pmt - i;
+      if (principal < 0) principal = 0;
+      bal -= Math.min(principal, bal);
+      months++;
+    }
+    return { months, interest, pmt };
+  }
+
+  function runVelocityCycle({
+    mortBalance0, mortRatePct, mortYears, mortPayDay,
+    helocLimit, helocRatePct, chunkPct, chunkMin,
+    monthlyExpenses,
+    incomes
+  }){
+    const mortMonthlyRate = (mortRatePct/100)/12;
+    const helocDailyRate  = (helocRatePct/100)/DAYS_PER_YEAR;
+    const mortPmt = stdMortgagePayment(mortBalance0, mortRatePct, mortYears);
+
+    const freqToPeriodDays = (freq) => {
+      if (freq === "weekly") return 7;
+      if (freq === "biweekly") return 14;
+      return DAYS_PER_MONTH;
+    };
+
+    const streams = incomes.map(s => ({
+      amt: Math.max(0, n(s.amt)),
+      period: freqToPeriodDays(s.freq),
+      next: 1
+    }));
+
+    let mortBal = mortBalance0;
+    let helocBal = 0;
+
+    let totalMortInt = 0;
+    let totalHelocInt = 0;
+
+    let day = 0;
+
+    while ((mortBal > 0.01 || helocBal > 0.01) && day < MAX_DAYS){
+      day++;
+      const dayOfMonth = ((day - 1) % DAYS_PER_MONTH) + 1;
+
+      // 1) HELOC daily interest (capitalized)
+      if (helocBal > 0){
+        const i = helocBal * helocDailyRate;
+        totalHelocInt += i;
+        helocBal += i;
+      }
+
+      // 2) Deposits today reduce HELOC
+      let depositsToday = 0;
+      for (const st of streams){
+        if (st.amt <= 0) continue;
+        if (day === st.next){
+          depositsToday += st.amt;
+          st.next += st.period;
+        }
+      }
+      if (depositsToday > 0){
+        helocBal = Math.max(0, helocBal - depositsToday);
+      }
+
+      // 3) Mortgage monthly interest accrues on day 1
+      if (dayOfMonth === 1 && mortBal > 0){
+        const mi = mortBal * mortMonthlyRate;
+        totalMortInt += mi;
+        mortBal += mi;
+      }
+
+      // 4) Chunk trigger (cycle rule):
+      // Only when (a) mortgage still exists, and (b) HELOC is effectively paid off (<= ZERO_EPS)
+      // Use % of available credit and apply to mortgage principal.
+      if (mortBal > 0 && helocBal <= ZERO_EPS){
+        const available = Math.max(0, helocLimit - helocBal); // ~helocLimit
+        const pct = clamp(n(chunkPct)/100, 0, 1);
+        let chunk = available * pct;
+        chunk = Math.min(chunk, mortBal);
+        if (chunk >= n(chunkMin) && chunk > 0){
+          helocBal += chunk;
+          mortBal  -= chunk;
+        }
+      }
+
+      // 5) Mortgage payment (withdraw from HELOC)
+      if (dayOfMonth === n(mortPayDay) && mortBal > 0){
+        const pay = Math.min(mortPmt, mortBal);
+        helocBal += pay;
+        mortBal  -= pay;
+      }
+
+      // 6) Monthly expenses on day 30 (withdraw from HELOC)
+      if (dayOfMonth === DAYS_PER_MONTH && monthlyExpenses > 0){
+        helocBal += monthlyExpenses;
+      }
+
+      // Clean small negatives
+      if (mortBal < 0.01) mortBal = 0;
+      if (helocBal < 0.01) helocBal = 0;
+
+      // If HELOC is maxed and mortgage still exists and we never reduce, break eventually
+      if (helocBal >= helocLimit - 0.01 && day > 120){
+        const anyIncome = streams.some(s => s.amt > 0);
+        if (!anyIncome) break;
+      }
+    }
+
+    return {
+      days: day,
+      years: day / DAYS_PER_YEAR,
+      mortPmt,
+      totalInterest: totalMortInt + totalHelocInt,
+      mortInterest: totalMortInt,
+      helocInterest: totalHelocInt,
+      endedWith: { mortBal, helocBal }
+    };
+  }
+
+  function getInputs(){
+    return {
+      income1: n(document.getElementById("income1").value),
+      freq1: document.getElementById("freq1").value,
+      income2: n(document.getElementById("income2").value),
+      freq2: document.getElementById("freq2").value,
+      income3: n(document.getElementById("income3").value),
+      freq3: document.getElementById("freq3").value,
+
+      monthlyExpenses: n(document.getElementById("monthlyExpenses").value),
+
+      mortBalance: n(document.getElementById("mortBalance").value),
+      mortRate: n(document.getElementById("mortRate").value),
+      mortYears: n(document.getElementById("mortYears").value),
+      mortPayDay: n(document.getElementById("mortPayDay").value),
+
+      helocLimit: n(document.getElementById("helocLimit").value),
+      helocRate: n(document.getElementById("helocRate").value),
+      chunkPct: n(document.getElementById("chunkPct").value),
+      chunkMin: n(document.getElementById("chunkMin").value),
+    };
+  }
+
+  function calc(){
+    const v = getInputs();
+    const warnEl = document.getElementById("warn");
+    warnEl.textContent = "";
+    warnEl.className = "warn";
+
+    if (v.mortBalance <= 0 || v.mortYears <= 0){
+      warnEl.textContent = "Enter a valid mortgage balance and years remaining.";
+      warnEl.classList.add("neg");
+      return;
+    }
+    if (v.helocLimit <= 0){
+      warnEl.textContent = "Enter a valid HELOC limit.";
+      warnEl.classList.add("neg");
+      return;
+    }
+
+    const incomes = [
+      { amt: v.income1, freq: v.freq1 },
+      { amt: v.income2, freq: v.freq2 },
+      { amt: v.income3, freq: v.freq3 },
+    ];
+
+    // Approx monthly income (warning-only)
+    const approxMonthlyIncome =
+      (v.freq1==="weekly"? v.income1*4.333 : v.freq1==="biweekly"? v.income1*2.167 : v.income1) +
+      (v.freq2==="weekly"? v.income2*4.333 : v.freq2==="biweekly"? v.income2*2.167 : v.income2) +
+      (v.freq3==="weekly"? v.income3*4.333 : v.freq3==="biweekly"? v.income3*2.167 : v.income3);
+
+    const std = runStandardMortgage(v.mortBalance, v.mortRate, v.mortYears);
+    const stdYears = std.months / 12;
+
+    const vel = runVelocityCycle({
+      mortBalance0: v.mortBalance,
+      mortRatePct: v.mortRate,
+      mortYears: v.mortYears,
+      mortPayDay: v.mortPayDay,
+      helocLimit: v.helocLimit,
+      helocRatePct: v.helocRate,
+      chunkPct: v.chunkPct,
+      chunkMin: v.chunkMin,
+      monthlyExpenses: v.monthlyExpenses,
+      incomes
+    });
+
+    const velYears = vel.years;
+    const timeSaved = Math.max(0, stdYears - velYears);
+    const interestSaved = Math.max(0, std.interest - vel.totalInterest);
+
+    document.getElementById("stdYearsOut").textContent = stdYears.toFixed(1);
+    document.getElementById("velYearsOut").textContent = velYears.toFixed(1);
+    document.getElementById("timeSaved").textContent = timeSaved.toFixed(1);
+
+    document.getElementById("stdPmtOut").textContent = fmt0(std.pmt);
+    document.getElementById("stdPmtOut2").textContent = fmt0(std.pmt);
+
+    document.getElementById("stdIntOut").textContent = fmt0(std.interest);
+    document.getElementById("velIntOut").textContent = fmt0(vel.totalInterest);
+    document.getElementById("interestSaved").textContent = fmt0(interestSaved);
+
+    const approxNet = approxMonthlyIncome - v.monthlyExpenses - std.pmt;
+    if (approxMonthlyIncome <= v.monthlyExpenses){
+      warnEl.textContent = "Warning: Approx monthly income ≤ expenses. HELOC will likely grow and cycle may stall.";
+      warnEl.classList.add("neg");
+    } else if (approxNet <= 0){
+      warnEl.textContent = "Note: After expenses + mortgage payment, monthly surplus looks small/negative. Cycle may be slow and HELOC utilization high.";
+      warnEl.classList.add("neg");
+    } else {
+      warnEl.textContent = "Simulation complete. Next chunk triggers only after HELOC is paid back down to ~$0.";
+      warnEl.classList.add("pos");
+    }
+
+    const r = document.getElementById("results");
+    r.style.display = "block";
+    r.scrollIntoView({behavior:"smooth"});
+  }
+
+  document.getElementById("calcBtn").addEventListener("click", calc);
+})();
+</script>
 </body>
 </html>
